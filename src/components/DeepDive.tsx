@@ -1,4 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const sections = [
   {
@@ -82,10 +86,96 @@ const sections = [
 ];
 
 export default function DeepDive() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const headingRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      // Animate main heading
+      gsap.fromTo(
+        headingRef.current,
+        { opacity: 0, y: 40 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top 80%",
+            toggleActions: "play none none none",
+          },
+        },
+      );
+
+      // Animate each deep-dive block
+      const blocks = gsap.utils.toArray<HTMLElement>(".deepdive-block");
+      blocks.forEach((block) => {
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: block,
+            start: "top 80%",
+            toggleActions: "play none none none",
+          },
+        });
+
+        tl.fromTo(
+          block,
+          { opacity: 0, y: 50 },
+          { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" },
+        )
+          .fromTo(
+            block.querySelector(".dd-badge"),
+            { opacity: 0, y: 20 },
+            { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+            "-=0.4",
+          )
+          .fromTo(
+            block.querySelector(".dd-eyebrow"),
+            { opacity: 0, y: 20 },
+            { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+            "-=0.3",
+          )
+          .fromTo(
+            block.querySelector(".dd-heading"),
+            { opacity: 0, y: 20 },
+            { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
+            "-=0.3",
+          )
+          .fromTo(
+            block.querySelectorAll(".dd-feature-btn"),
+            { opacity: 0, y: 20 },
+            {
+              opacity: 1,
+              y: 0,
+              stagger: 0.1,
+              duration: 0.5,
+              ease: "power2.out",
+            },
+            "-=0.2",
+          )
+          .fromTo(
+            block.querySelector(".dd-link"),
+            { opacity: 0, y: 20 },
+            { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+            "-=0.2",
+          )
+          .fromTo(
+            block.querySelector(".dd-visual"),
+            { opacity: 0, scale: 0.95 },
+            { opacity: 1, scale: 1, duration: 0.7, ease: "power2.out" },
+            "-=0.3",
+          );
+      });
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section className="py-28 bg-[#0a0a0a]" id="features">
+    <section ref={sectionRef} className="py-28 bg-[#0a0a0a]" id="features">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-6">
+        <div ref={headingRef} className="text-center mb-6">
           <p className="text-blue-400 text-sm font-semibold uppercase tracking-widest mb-4">
             #1 AI OPERATING SYSTEM FOR HOME SERVICES
           </p>
@@ -119,19 +209,27 @@ function DeepDiveBlock({
 }) {
   const [activeFeature, setActiveFeature] = useState(0);
 
+  // Auto‑cycle features every 3 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveFeature((prev) => (prev + 1) % section.features.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [section.features.length]);
+
   return (
     <div
-      className={`grid lg:grid-cols-2 gap-16 items-center ${reversed ? "" : ""}`}
+      className={`deepdive-block grid lg:grid-cols-2 gap-16 items-center ${reversed ? "" : ""}`}
     >
       {/* Text side */}
       <div className={reversed ? "lg:order-2" : ""}>
-        <span className="inline-block bg-white/10 text-white/70 text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full mb-5">
+        <span className="dd-badge inline-block bg-white/10 text-white/70 text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full mb-5">
           {section.badge}
         </span>
-        <p className="text-blue-400 text-sm font-semibold uppercase tracking-widest mb-3">
+        <p className="dd-eyebrow text-blue-400 text-sm font-semibold uppercase tracking-widest mb-3">
           {section.eyebrow}
         </p>
-        <h3 className="text-3xl md:text-4xl font-black tracking-tight mb-8">
+        <h3 className="dd-heading text-3xl md:text-4xl font-black tracking-tight mb-8">
           {section.heading}
         </h3>
 
@@ -140,10 +238,10 @@ function DeepDiveBlock({
             <button
               key={i}
               onClick={() => setActiveFeature(i)}
-              className={`text-left px-5 py-4 rounded-xl border transition-all ${
+              className={`dd-feature-btn text-left px-5 py-4 rounded-xl border transition-all ${
                 activeFeature === i
                   ? "bg-blue-600/20 border-blue-500/40 text-white"
-                  : "bg-white/2 border-white/10 text-white/60 hover:bg-white/5 hover:text-white/80"
+                  : "bg-white/5 border-white/10 text-white/60 hover:bg-white/5 hover:text-white/80"
               }`}
             >
               <h4 className="font-semibold text-sm mb-1">{f.title}</h4>
@@ -158,7 +256,7 @@ function DeepDiveBlock({
 
         <a
           href={section.href}
-          className="mt-8 inline-flex items-center gap-2 text-white/80 hover:text-white font-medium text-sm border border-white/20 hover:border-white/40 px-5 py-2.5 rounded-full transition-colors"
+          className="dd-link mt-8 inline-flex items-center gap-2 text-white/80 hover:text-white font-medium text-sm border border-white/20 hover:border-white/40 px-5 py-2.5 rounded-full transition-colors"
         >
           {section.link} →
         </a>
@@ -166,7 +264,9 @@ function DeepDiveBlock({
 
       {/* Visual side */}
       <div className={reversed ? "lg:order-1" : ""}>
-        <FeatureVisual sectionId={section.id} activeFeature={activeFeature} />
+        <div className="dd-visual">
+          <FeatureVisual sectionId={section.id} activeFeature={activeFeature} />
+        </div>
       </div>
     </div>
   );
@@ -174,7 +274,6 @@ function DeepDiveBlock({
 
 function FeatureVisual({
   sectionId,
-//   activeFeature,
 }: {
   sectionId: string;
   activeFeature: number;
@@ -285,6 +384,7 @@ function FeatureVisual({
     );
   }
 
+  // Marketing
   return (
     <div className="rounded-2xl bg-[#0f1117] border border-white/10 p-6 shadow-2xl">
       <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-4">

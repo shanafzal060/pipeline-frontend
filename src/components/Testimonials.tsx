@@ -1,3 +1,9 @@
+import { useEffect, useRef } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
+
 const stats = [
   {
     value: "$40K",
@@ -63,10 +69,81 @@ const quotes = [
 ];
 
 export default function Testimonials() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const headingRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
+  const quotesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      // 1. Animate heading block
+      gsap.fromTo(
+        headingRef.current,
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1.9,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top 80%",
+            toggleActions: "play none none none",
+          },
+        },
+      );
+
+      // 2. Stat cards – stagger them
+      const statCards =
+        statsRef.current?.querySelectorAll<HTMLDivElement>(".stat-card") || [];
+      gsap.fromTo(
+        statCards,
+        { opacity: 0, y: 40 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1.9,
+          stagger: 0.1,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top 75%",
+            toggleActions: "play none none none",
+          },
+          delay: 0.2,
+        },
+      );
+
+      // 3. Quote cards – stagger after stats
+      const quoteCards =
+        quotesRef.current?.querySelectorAll<HTMLDivElement>(".quote-card") ||
+        [];
+      gsap.fromTo(
+        quoteCards,
+        { opacity: 0, y: 40 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1.9,
+          stagger: 0.15,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top 70%",
+            toggleActions: "play none none none",
+          },
+          delay: 0.5,
+        },
+      );
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section className="py-28 bg-[#0a0a0a]">
+    <section ref={sectionRef} className="py-28 bg-[#0a0a0a]">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16">
+        <div ref={headingRef} className="text-center mb-16">
           <p className="text-blue-400 text-sm font-semibold uppercase tracking-widest mb-4">
             Real results for real businesses
           </p>
@@ -77,11 +154,14 @@ export default function Testimonials() {
         </div>
 
         {/* Stat cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-14">
+        <div
+          ref={statsRef}
+          className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-14"
+        >
           {stats.map((stat, i) => (
             <div
               key={i}
-              className="bg-white/3 border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-all"
+              className="stat-card bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-all"
             >
               <div className="text-4xl font-black text-white mb-2">
                 {stat.value}
@@ -97,11 +177,11 @@ export default function Testimonials() {
         </div>
 
         {/* Quote cards */}
-        <div className="grid md:grid-cols-2 gap-5">
+        <div ref={quotesRef} className="grid md:grid-cols-2 gap-5">
           {quotes.map((q, i) => (
             <div
               key={i}
-              className="bg-white/3 border border-white/10 rounded-2xl p-7 hover:border-white/20 transition-all"
+              className="quote-card bg-white/5 border border-white/10 rounded-2xl p-7 hover:border-white/20 transition-all"
             >
               <div className="flex gap-1 mb-5">
                 {Array.from({ length: 5 }).map((_, j) => (

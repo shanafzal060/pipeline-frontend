@@ -1,5 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Play, Pause } from "lucide-react";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const calls = [
   {
@@ -31,10 +35,65 @@ const calls = [
 export default function VoiceCalls() {
   const [playing, setPlaying] = useState<number | null>(null);
 
+  // Refs for animation
+  const sectionRef = useRef<HTMLElement>(null);
+  const headingRef = useRef<HTMLDivElement>(null);
+  const cardsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      // 1. Animate heading and subheading
+      gsap.fromTo(
+        headingRef.current,
+        { opacity: 0, y: 40 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top 60%",
+            toggleActions: "play none none none",
+          },
+        },
+      );
+
+      // 2. Animate each call card with stagger
+      const cards =
+        cardsRef.current?.querySelectorAll<HTMLDivElement>(
+          ".voice-call-card",
+        ) || [];
+      gsap.fromTo(
+        cards,
+        { opacity: 0, y: 50 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1.8,
+          stagger: 0.15,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top 70%",
+            toggleActions: "play none none none",
+          },
+          delay: 1.0,
+        },
+      );
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section className="py-24 bg-[#0a0a0a]" id="ai-voice-calls">
+    <section
+      ref={sectionRef}
+      className="py-24 bg-[#0a0a0a]"
+      id="ai-voice-calls"
+    >
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-14">
+        <div ref={headingRef} className="text-center mb-14">
           <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-4">
             Hear an AI Employee handle
             <br />
@@ -46,11 +105,11 @@ export default function VoiceCalls() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-5">
+        <div ref={cardsRef} className="grid md:grid-cols-2 gap-5">
           {calls.map((call, i) => (
             <div
               key={i}
-              className="group bg-white/3 border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-all"
+              className="voice-call-card group bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-all"
             >
               <div className="flex items-start gap-4">
                 <button
